@@ -11,17 +11,12 @@ from services.market_data import (
     get_benchmark_returns,
     calculate_asset_contributions,
 )
-from pydantic import BaseModel
-from datetime import date
+from schemas import (
+    PortfolioRequest,
+    StockSearchResult,
+    PortfolioAnalysisResponse,
+)
 from fastapi.middleware.cors import CORSMiddleware
-
-class PortfolioRequest(BaseModel):
-    tickers: list[str]
-    weights: dict[str, float]
-    start_date: date
-    end_date: date
-    risk_free_rate: float = 0.04
-    benchmark: str = "^GSPC"
 
 app = FastAPI()
 app.add_middleware(
@@ -36,11 +31,11 @@ app.add_middleware(
 def root ():
     return {"message": "Portfolio Analytics API"}
 
-@app.get("/stocks/search")
+@app.get("/stocks/search", response_model=list[StockSearchResult])
 def search_stock_endpoint(query: str):
     return search_stocks(query)
 
-@app.post("/portfolio/analyze")
+@app.post("/portfolio/analyze", response_model=PortfolioAnalysisResponse)
 def analyze_portfolio(request: PortfolioRequest):
     if request.start_date >= request.end_date:
         raise HTTPException(
@@ -102,12 +97,8 @@ def analyze_portfolio(request: PortfolioRequest):
 
         performance_history.append({
             "date": date_string,
-            "return": float(value),
-            "benchmark_return": (
-                float(benchmark_value)
-                if benchmark_value is not None
-                else None
-            )
+            "return": value,
+            "benchmark_return": benchmark_value
         })
 
     annual_volatility = calculate_volatility(
@@ -130,13 +121,10 @@ def analyze_portfolio(request: PortfolioRequest):
     )
 
     return {
-        "total_return": float(cumulative_returns.iloc[-1]),
-        "annual_volatility": float(annual_volatility),
-        "sharpe_ratio": float(sharpe_ratio),
-        "max_drawdown": float(max_drawdown),
+        "total_return": cumulative_returns.iloc[-1],
+        "annual_volatility": annual_volatility,
+        "sharpe_ratio": sharpe_ratio,
+        "max_drawdown": max_drawdown,
         "performance_history": performance_history,
-        "asset_contributions": {
-            ticker: float(value)
-            for ticker, value in asset_contributions.items()
-        },
+        "asset_contributions": asset_contributions,
     }
