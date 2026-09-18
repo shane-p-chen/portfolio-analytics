@@ -2,50 +2,47 @@ import { useEffect, useState } from "react";
 import { searchStocks } from "../api/portfolio";
 import type { StockSearchResult } from "../types";
 
+type SearchState = {
+  query: string;
+  results: StockSearchResult[];
+  error: string;
+};
+
 export function useStockSearch() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [fetchedResults, setFetchedResults] = useState<StockSearchResult[]>([]);
+  const [search, setSearch] = useState<SearchState | null>(null);
   const [activeHoldingIndex, setActiveHoldingIndex] = useState<number | null>(null);
-
-  async function runSearch(query: string) {
-    const normalizedQuery = query.trim();
-
-    if (normalizedQuery === "") {
-      setFetchedResults([]);
-      return;
-    }
-
-    try {
-      const results = await searchStocks(normalizedQuery);
-      setFetchedResults(results);
-    } catch (error) {
-      console.error(error);
-      setFetchedResults([]);
-    }
-  }
+  const query = searchQuery.trim();
 
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      return;
-    }
-    const timer = setTimeout(() => {
-      runSearch(searchQuery);
+    if (!query) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchStocks(query);
+        if (!cancelled) setSearch({ query, results, error: "" });
+      } catch {
+        if (!cancelled) setSearch({ query, results: [], error: "Search unavailable. You can still enter a ticker manually." });
+      }
     }, 300);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
     };
-  }, [searchQuery]);
+  }, [query]);
 
   function clearSearch() {
-    setFetchedResults([]);
+    setSearchQuery("");
+    setSearch(null);
     setActiveHoldingIndex(null);
   }
 
-  const searchResults = searchQuery.trim() === "" ? [] : fetchedResults;
-
+  const current = query && search?.query === query ? search : null;
   return {
     setSearchQuery,
-    searchResults,
+    searchResults: current?.results ?? [],
+    searchLoading: Boolean(query && !current),
+    searchError: current?.error ?? "",
     activeHoldingIndex,
     setActiveHoldingIndex,
     clearSearch,

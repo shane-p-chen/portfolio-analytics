@@ -18,13 +18,16 @@ function App() {
     { ticker: "GOOGL", weight: 20},
   ]);
   const [result, setResult] = useState<PortfolioResult | null>(null);
-  const [loading, setloading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [benchmark, setBenchmark] = useState("^GSPC");
+  const [analysisContext, setAnalysisContext] = useState<{ benchmark: string; startDate: string; endDate: string } | null>(null);
 
   const {
     setSearchQuery,
     searchResults,
+    searchLoading,
+    searchError,
     activeHoldingIndex,
     setActiveHoldingIndex,
     clearSearch,
@@ -70,6 +73,7 @@ function App() {
 
     for(const holding of holdings) {
       if(holding.weight === ""){
+        setError("Enter a weight for every holding before analyzing.");
         return;
       }
       weights[holding.ticker] = holding.weight/100;
@@ -83,12 +87,13 @@ function App() {
       benchmark: benchmark
     };
 
-    setloading(true);
+    setLoading(true);
     setError("");
     setResult(null);
     try{
       const data = await analyzePortfolioApi(portfolioData);
       setResult(data);
+      setAnalysisContext({ benchmark: portfolioData.benchmark, startDate: portfolioData.start_date, endDate: portfolioData.end_date });
     } catch (error){
       if (error instanceof Error) {
         setError(error.message);
@@ -96,46 +101,60 @@ function App() {
         setError("Something went wrong");
       }
     } finally {
-      setloading(false);
+      setLoading(false);
     }
   }
 
   return (
-    <div>
-      <h1>Portfolio Analytics</h1>
-      <PortfolioForm
-        startDate={startDate}
-        endDate={endDate}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        benchmark={benchmark}
-        onBenchmarkChange={setBenchmark}
-        holdings={holdings}
-        searchResults={searchResults}
-        activeHoldingIndex={activeHoldingIndex}
-        onTickerFieldChange={handleTickerFieldChange}
-        onWeightChange={updateWeight}
-        onSearchResultSelect={handleSearchResultSelect}
-        onAddHolding={addHolding}
-        onRemoveHolding={removeHolding}
-        onAnalyze={analyzePortfolio}
-        loading={loading}
-      />
-
-      {error && <p>{error}</p>}
-
-      {result && (
-        <div>
-          <h2>Portfolio Analysis</h2>
-          <PortfolioMetrics result={result} />
-          <h3>Asset Contributions</h3>
-          <AssetContributionChart contributions={result.asset_contributions} />
-          <h3>Portfolio Performance</h3>
-          <PerformanceChart data={result.performance_history} benchmark={benchmark} />
+    <main className="app-shell">
+      <header className="page-header">
+        <p className="eyebrow">Portfolio insights</p>
+        <h1>Portfolio Analytics</h1>
+        <p>Understand your returns, measure risk, and see what drives performance.</p>
+      </header>
+      <div className="dashboard">
+        <PortfolioForm
+          startDate={startDate} endDate={endDate}
+          onStartDateChange={setStartDate} onEndDateChange={setEndDate}
+          benchmark={benchmark} onBenchmarkChange={setBenchmark}
+          holdings={holdings} searchResults={searchResults}
+          searchLoading={searchLoading} searchError={searchError}
+          activeHoldingIndex={activeHoldingIndex}
+          onTickerFieldChange={handleTickerFieldChange}
+          onWeightChange={updateWeight}
+          onSearchResultSelect={handleSearchResultSelect}
+          onAddHolding={addHolding} onRemoveHolding={removeHolding}
+          onAnalyze={analyzePortfolio} loading={loading} error={error}
+        />
+        <div className="results">
+          {loading ? (
+            <section className="panel state-panel" role="status">
+              <div className="state-mark" aria-hidden="true">···</div>
+              <h2>Analyzing your portfolio</h2>
+              <p>Fetching market data and calculating returns and risk. This may take a moment.</p>
+            </section>
+          ) : result && analysisContext ? (
+            <>
+              <div className="results-heading">
+                <p className="eyebrow">Analysis results</p>
+                <h2>Your portfolio at a glance</h2>
+                <p>{analysisContext.startDate} – {analysisContext.endDate} · Results from your last analysis</p>
+              </div>
+              <PortfolioMetrics result={result} />
+              <PerformanceChart data={result.performance_history} benchmark={analysisContext.benchmark} />
+              <AssetContributionChart contributions={result.asset_contributions} />
+            </>
+          ) : (
+            <section className="panel state-panel">
+              <div className="state-mark" aria-hidden="true">↗</div>
+              <h2>{error ? "Your analysis is not ready" : "See the bigger picture"}</h2>
+              <p>{error ? "Review the message in the portfolio form, then analyze again." : "Set your holdings, choose a benchmark, and analyze your portfolio to explore performance and risk."}</p>
+            </section>
+          )}
         </div>
-      )}
-    </div>
-  )
+      </div>
+    </main>
+  );
 }
 
-export default App
+export default App;
