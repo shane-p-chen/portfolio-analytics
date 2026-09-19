@@ -5,6 +5,7 @@ A full-stack portfolio analytics dashboard for analyzing historical investment p
 
 Built with React, TypeScript, FastAPI, pandas, and yfinance.
 
+**[View Live Demo](https://portfolio-analytics-lemon.vercel.app/)**
 ![Portfolio Analytics Dashboard](docs/images/dashboard.png)
 
 ## Features
