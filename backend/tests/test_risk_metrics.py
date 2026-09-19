@@ -91,16 +91,23 @@ class TestCalculateMaxDrawdown:
         assert result == pytest.approx(0.0)
 
     def test_monotonic_decrease_equals_decline_from_peak(self):
-        # Every day is a new low, so the running peak is fixed at
-        # day 0's value; max drawdown is the decline from that peak
-        # to the final value.
+        # The initial investment of 1.0 remains the peak, so all three
+        # losses contribute to the drawdown.
         result = calculate_max_drawdown(pd.Series([-0.10, -0.10, -0.10]))
-        expected = (0.9 ** 2) - 1
+        expected = (0.9 ** 3) - 1
         assert result == pytest.approx(expected)
 
-    def test_single_day_has_zero_drawdown(self):
+    def test_single_negative_return_drawdown_equals_loss(self):
         result = calculate_max_drawdown(pd.Series([-0.05]))
-        assert result == pytest.approx(0.0)
+        assert result == pytest.approx(-0.05)
+
+    def test_initial_loss_followed_by_partial_recovery(self):
+        result = calculate_max_drawdown(pd.Series([-0.10, 0.05]))
+        assert result == pytest.approx(-0.10)
+
+    def test_later_peak_above_initial_investment(self):
+        result = calculate_max_drawdown(pd.Series([-0.10, 0.50, -0.20]))
+        assert result == pytest.approx(-0.20)
 
     def test_all_zero_returns_has_zero_drawdown(self):
         result = calculate_max_drawdown(pd.Series([0.0, 0.0, 0.0]))

@@ -95,7 +95,8 @@ def calculate_sharpe_ratio(portfolio_daily_returns, risk_free_rate = 0.04):
 
 def calculate_max_drawdown(portfolio_daily_returns):
     portfolio_value = 1 + calculate_cumulative_returns(portfolio_daily_returns)
-    running_peak = portfolio_value.cummax()
+    # Include initial capital in the peak before any returns are earned.
+    running_peak = portfolio_value.cummax().clip(lower=1.0)
     drawdowns = portfolio_value / running_peak - 1
     return drawdowns.min()
 
