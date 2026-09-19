@@ -73,11 +73,14 @@ def calculate_cumulative_returns(portfolio_daily_returns):
     portfolio_cumulative_returns = (1 + portfolio_daily_returns).cumprod() - 1
     return portfolio_cumulative_returns
 
+# Annualize daily volatility assuming approximately 252 trading days per year.
 def calculate_volatility(portfolio_daily_returns):
     daily_volatility = portfolio_daily_returns.std()
     annual_volatility = daily_volatility * math.sqrt(252)
     return annual_volatility
 
+# risk_free_rate is supplied as an annual decimal rate.
+# Annualize mean daily return using 252 trading days.
 def calculate_sharpe_ratio(portfolio_daily_returns, risk_free_rate = 0.04):
     annual_return = portfolio_daily_returns.mean() * 252
     annual_volatility = calculate_volatility(portfolio_daily_returns)
@@ -93,6 +96,7 @@ def calculate_sharpe_ratio(portfolio_daily_returns, risk_free_rate = 0.04):
     sharpe_ratio = (annual_return - risk_free_rate) / annual_volatility
     return sharpe_ratio
 
+# Include initial capital in the peak before any returns are earned.
 def calculate_max_drawdown(portfolio_daily_returns):
     portfolio_value = 1 + calculate_cumulative_returns(portfolio_daily_returns)
     # Include initial capital in the peak before any returns are earned.

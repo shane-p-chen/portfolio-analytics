@@ -16,6 +16,7 @@ export function useStockSearch() {
 
   useEffect(() => {
     if (!query) return;
+    // Cleanup ignores stale responses after the query changes or the hook unmounts.
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {

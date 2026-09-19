@@ -21,6 +21,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [benchmark, setBenchmark] = useState("^GSPC");
+  // Keep result labels tied to submitted inputs while the form remains editable.
   const [analysisContext, setAnalysisContext] = useState<{ benchmark: string; startDate: string; endDate: string } | null>(null);
 
   const {
