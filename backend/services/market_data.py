@@ -96,7 +96,6 @@ def calculate_sharpe_ratio(portfolio_daily_returns, risk_free_rate = 0.04):
     sharpe_ratio = (annual_return - risk_free_rate) / annual_volatility
     return sharpe_ratio
 
-# Include initial capital in the peak before any returns are earned.
 def calculate_max_drawdown(portfolio_daily_returns):
     portfolio_value = 1 + calculate_cumulative_returns(portfolio_daily_returns)
     # Include initial capital in the peak before any returns are earned.
